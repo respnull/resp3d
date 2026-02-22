@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+  margin: 0;
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #050;
+  overflow: hidden;
+}
+
+.cube {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}
+
+.face {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+}
+
+.front { transform: translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_svg.svg"); }
+.back { transform: rotateY(180deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
+.right { transform: rotateY(90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
+.left { transform: rotateY(-90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
+.top { transform: rotateX(90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
+.bottom { transform: rotateX(-90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
+</style>
+</head>
+<body>
+
+<div class="cube" id="cube">
+  <div class="face front"></div>
+  <div class="face back"></div>
+  <div class="face right"></div>
+  <div class="face left"></div>
+  <div class="face top"></div>
+  <div class="face bottom"></div>
+</div>
+
+<script>
+const cube = document.getElementById("cube");
+
+let isDragging = false;
+let initialDistance = 0;
+
+let rotationX = 0;
+let rotationY = 0;
+
+let velocityX = 0;
+let velocityY = 0;
+
+let zoom = 0;
+let zoomVelocity = 0;
+
+const minZoom = -600;
+const maxZoom = 400;
+
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+const friction = 0.95;
+const zoomFriction = 0.90;
+const sensitivity = 0.3;
+
+function updateTransform() {
+  cube.style.transform = `
+    translateZ(${zoom}px)
+    rotateY(${rotationY}deg)
+    rotateX(${rotationX}deg)
+  `;
+}
+
+document.addEventListener("mousedown", (e) => {
+  if (e.button === 0) {
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+
+  const deltaX = e.clientX - lastMouseX;
+  const deltaY = e.clientY - lastMouseY;
+
+  velocityY = deltaX * sensitivity;
+  velocityX = deltaY * sensitivity;
+
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+});
+
+document.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) {
+    isDragging = true;
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    isDragging = false;
+    initialDistance = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+});
+
+document.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 1 && isDragging) {
+    const deltaX = e.touches[0].clientX - lastMouseX;
+    const deltaY = e.touches[0].clientY - lastMouseY;
+
+    velocityY = deltaX * sensitivity;
+    velocityX = deltaY * sensitivity;
+
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+
+    e.preventDefault();
+  } else if (e.touches.length === 2) {
+    const currentDistance = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const delta = currentDistance - initialDistance;
+    zoomVelocity += delta * 0.5;
+    initialDistance = currentDistance;
+  }
+}, { passive: false });
+
+document.addEventListener("touchend", (e) => {
+  if (e.touches.length === 0) {
+    isDragging = false;
+  }
+});
+
+document.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  zoomVelocity += e.deltaY * -0.5;
+}, { passive: false });
+
+function animate() {
+  rotationY += velocityY;
+  rotationX -= velocityX;
+
+  velocityX *= friction;
+  velocityY *= friction;
+
+  zoom += zoomVelocity;
+  zoomVelocity *= zoomFriction;
+
+  zoom = Math.min(Math.max(zoom, minZoom), maxZoom);
+
+  updateTransform();
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</html>
