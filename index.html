@@ -30,6 +30,24 @@ body {
   background-position: center;
 }
 
+body.disco {
+  animation: discoBg 0.5s infinite alternate;
+}
+
+@keyframes discoBg {
+  0% { background: #f00; }
+  25% { background: #0f0; }
+  50% { background: #00f; }
+  75% { background: #ff0; }
+  100% { background: #f0f; }
+}
+
+.cube.disco {
+  box-shadow: 0 0 40px #fff,
+              0 0 80px #0ff,
+              0 0 120px #f0f;
+}
+
 .front { transform: translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_svg.svg"); }
 .back { transform: rotateY(180deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
 .right { transform: rotateY(90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
@@ -37,6 +55,11 @@ body {
 .top { transform: rotateX(90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
 .bottom { transform: rotateX(-90deg) translateZ(100px); background-image: url("https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/resp_noface_svg.svg"); }
 </style>
+
+<audio id="discoMusic" loop>
+  <source src="https://raw.githubusercontent.com/respnull/resp3d/refs/heads/main/song.mp3" type="audio/mpeg">
+</audio>
+
 </head>
 <body>
 
@@ -73,6 +96,15 @@ let lastMouseY = 0;
 const friction = 0.95;
 const zoomFriction = 0.90;
 const sensitivity = 0.3;
+
+let discoActive = false;
+let highSpeedTime = 0;
+
+let discoCooldown = 0;
+const discoCooldownTime = 1000;
+
+const speedThreshold = 12;
+const activationTime = 400;
 
 function updateTransform() {
   cube.style.transform = `
@@ -166,6 +198,37 @@ function animate() {
   zoomVelocity *= zoomFriction;
 
   zoom = Math.min(Math.max(zoom, minZoom), maxZoom);
+
+  const spinSpeed = Math.abs(velocityX) + Math.abs(velocityY);
+
+  if (spinSpeed > speedThreshold) {
+    highSpeedTime += 16;
+  } else {
+    highSpeedTime = 0;
+  }
+
+  if (!discoActive && highSpeedTime > activationTime) {
+    discoActive = true;
+    document.body.classList.add("disco");
+    cube.classList.add("disco");
+    discoMusic.play().catch(() => {});
+  }
+
+  if (discoActive) {
+      if (spinSpeed < speedThreshold * 0.5) {
+          discoCooldown += 16;
+      } else {
+          discoCooldown = 0;
+      }
+
+      if (discoCooldown > discoCooldownTime) {
+          discoActive = false;
+          document.body.classList.remove("disco");
+          cube.classList.remove("disco");
+          discoMusic.pause();
+          discoCooldown = 0;
+      }
+  }
 
   updateTransform();
   requestAnimationFrame(animate);
