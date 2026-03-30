@@ -13,3 +13,8 @@ You can access by [clicking here](https://respnull.github.io/resp3d).<br>
 
 ## License
 Licensed under the Apache License 2.0. See the LICENSE file for details.<br>
+
+**Other Third Party Licenses**
+"Pixel Peeker Polka - faster" Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+http://creativecommons.org/licenses/by/4.0/
